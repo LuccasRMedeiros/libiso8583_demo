@@ -1,5 +1,6 @@
 #include "stt_machine.h"
 #include "iso8583_demo.h"
+#include "luhn_validation.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +42,7 @@ static void completefields(iso8583msg_st *out)
 static int readcard(char *mod, iso8583msg_st *out)
 {
     struct timespec slptime; 
+    const char *pan = "1234567890123456";//"5186001700008785";
 
     slptime.tv_sec = 1;
     slptime.tv_nsec = 0;
@@ -50,10 +52,16 @@ static int readcard(char *mod, iso8583msg_st *out)
     printf("\e[43m "); fflush(stdout); nanosleep(&slptime, NULL);
     printf("\e[42m "); fflush(stdout); nanosleep(&slptime, NULL);
     printf("\e[44m \e[0m\n");
+    if (luhn_validatepan((char *)pan) != LUHN_VALIDATION_OK)
+    {
+        printf("\nCARTÃO INVÁLIDO\n");
+        
+        return -1;
+    }
     nanosleep(&slptime, NULL);
     printf("Leitura concluída\n");
 
-    strcpy(out->de002_pan, "5186001700008785");
+    strcpy(out->de002_pan, pan);
     strcpy(out->de003_proccode, "00");
     strcpy(out->de003_proccode + 2, mod);
     strcpy(out->de003_proccode + 4, mod);
@@ -151,7 +159,12 @@ int stt_machine(stt_machine_e *state_io)
     case STT_READ_CARD:
         printf("\nR$%.2f %s\n\n", (float)(amount / 100), mod);
         printf("Aproxime ou insira o cartão\n");
-        readcard(mod, &transinfo);
+        if (readcard(mod, &transinfo) < 0)
+        {
+            *state_io = STT_IDLE;
+
+            break;
+        }
 
         *state_io = STT_ISO_SEND;
 

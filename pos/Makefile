@@ -25,4 +25,6 @@ clean:
 	@rm -f $(PROJ)
 	@echo "Project cleaned"
 
-.PHONY: all debug clean
+re: clean all
+
+.PHONY: all debug clean re
