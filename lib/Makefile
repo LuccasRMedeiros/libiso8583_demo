@@ -1,5 +1,5 @@
 CC=gcc
-STD=c99
+STD=gnu99
 CFLAGS=-Wall -Wextra -Wall
 DEBUG=
 AR=ar
@@ -7,12 +7,13 @@ AR=ar
 PROJ=libiso8583_demo.a
 
 SRC=$(wildcard ./src/*.c)
-INC=$(wildcard ./src/*.h)
 OBJ=$(patsubst %.c, %.o, $(SRC))
 
 
-all:
-	@$(CC) -std=$(STD) $(CFLAGS) $(DEBUG) -c $(SRC) -o $(OBJ)
+%.o: %.c
+	@$(CC) -std=$(STD) $(CFLAGS) $(DEBUG) -c $< -o $@
+
+all: $(OBJ)
 	@$(AR) r $(PROJ) $(OBJ)
 	@echo "Finished!"
 

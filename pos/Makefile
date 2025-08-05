@@ -9,12 +9,12 @@ PROJ=pos_demo
 SRC=$(wildcard ./src/*.c)
 INC=inc
 OBJ=$(patsubst %.c, %.o, $(SRC))
-LIB=lib/
+LIB=lib
 LINK=iso8583_demo
 
 
 all:
-	@$(CC) -std=$(STD) $(CFLAGS) $(DEBUG) -L $(LIB) -l$(LINK) -I$(INC) $(SRC) -o $(PROJ)
+	@$(CC) -std=$(STD) $(CFLAGS) $(DEBUG) -I$(INC) $(SRC) -L $(LIB) -l$(LINK) -o $(PROJ)
 	@echo "Finished!"
 
 debug: DEBUG=-g 

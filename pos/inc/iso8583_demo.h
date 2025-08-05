@@ -2,6 +2,7 @@
 #define ISO8583_DEMO_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #define MSGTYPE_LEN 4
 #define BITMASK_LEN 16
@@ -26,21 +27,19 @@ typedef enum
     MSG_STRUCT_OUT_CANNOT_BE_NULL,
 } iso8583msg_ret_e;
 
-typedef unsigned char byte;
-
 typedef struct
 {
-    byte   msgtype[MSGTYPE_LEN+1];
-    int    de002_pan;
-    int    de003_proccode;
-    int    de004_amount;
-    int    de007_datetime;
-    int    de011_stan;
-    int    de012_loctime;
-    char   de037_refnumber[DE037_LEN+1];
-    char   de041_cardid[DE041_LEN+1];
-    char   de049_currency[DE049_LEN+1];
-    char   de128_authcode[DE128_LEN+1];
+    char    msgtype[MSGTYPE_LEN+1];
+    char    de002_pan[DE002_LEN+1];
+    char    de003_proccode[DE003_LEN+1];
+    char    de004_amount[DE004_LEN+1];
+    char    de007_datetime[DE007_LEN+1];
+    char    de011_stan[DE011_LEN+1];
+    char    de012_loctime[DE012_LEN+1];
+    char    de037_refnumber[DE037_LEN+1];
+    char    de041_cardid[DE041_LEN+1];
+    char    de049_currency[DE049_LEN+1];
+    char    de128_authcode[DE128_LEN+1];
 } iso8583msg_st;
 
 iso8583msg_ret_e iso8583_buildmsg(iso8583msg_st msgfields, size_t buf_len, char *buf_out);
