@@ -1,5 +1,6 @@
-#include <iso8583_demo.h>
-#include <stt_machine.h>
+#include "iso8583_demo.h"
+#include "stt_machine.h"
+#include "memory.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +14,8 @@ int main(void)
 {
     int flag_exec = CONTINUE;
     stt_machine_e state = STT_IDLE;
+
+    memory_init();
     
     while(flag_exec == CONTINUE)
     {

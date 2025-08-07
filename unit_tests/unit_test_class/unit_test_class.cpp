@@ -26,8 +26,8 @@ bool SimpleUnitTest::run(void)
     }
 
     std::cout << ERROR_FORMAT << "FAIL." << RESET_FORMAT << std::endl;
-    return false;
 
+    return false;
 }
 
 SimpleTest::SimpleTest()

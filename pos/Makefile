@@ -1,7 +1,6 @@
 CC=gcc
 STD=gnu99
 CFLAGS=-Wall -Wextra -Wall
-DEBUG=
 AR=ar
 
 PROJ=pos_demo
@@ -9,17 +8,13 @@ PROJ=pos_demo
 SRC=$(wildcard ./src/*.c)
 INC=inc
 OBJ=$(patsubst %.c, %.o, $(SRC))
-LIB=lib
+LIB=libs
 LINK=iso8583_demo
 
 
 all:
-	@$(CC) -std=$(STD) $(CFLAGS) $(DEBUG) -I$(INC) $(SRC) -L $(LIB) -l$(LINK) -o $(PROJ)
+	@$(CC) -std=$(STD) $(CFLAGS) -g -I$(INC) $(SRC) -L $(LIB) -l$(LINK) -o $(PROJ)
 	@echo "Finished!"
-
-debug: DEBUG=-g 
-
-debug: all
 
 clean:
 	@rm -f $(PROJ)
@@ -27,4 +22,4 @@ clean:
 
 re: clean all
 
-.PHONY: all debug clean re
+.PHONY: all debug clean

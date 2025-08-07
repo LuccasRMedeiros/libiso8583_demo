@@ -1,7 +1,6 @@
 CC=gcc
 STD=gnu99
 CFLAGS=-Wall -Wextra -Wall
-DEBUG=
 AR=ar
 
 PROJ=libiso8583_demo.a
@@ -11,15 +10,11 @@ OBJ=$(patsubst %.c, %.o, $(SRC))
 
 
 %.o: %.c
-	@$(CC) -std=$(STD) $(CFLAGS) $(DEBUG) -c $< -o $@
+	@$(CC) -std=$(STD) $(CFLAGS) -g -c $< -o $@
 
 all: $(OBJ)
 	@$(AR) r $(PROJ) $(OBJ)
 	@echo "Finished!"
-
-debug: DEBUG=-g 
-
-debug: all
 
 clean:
 	@rm -f $(PROJ) $(OBJ)
@@ -27,4 +22,4 @@ clean:
 
 re: clean all
 	
-.PHONY: all debug clean re
+.PHONY: all clean re

@@ -1,5 +1,5 @@
-#ifndef TEST_CASE_HPP
-#define TEST_CASE_HPP
+#ifndef UNIT_TEST_CLASS_HPP
+#define UNIT_TEST_CLASS_HPP
 
 #include <functional>
 #include <string>
@@ -24,6 +24,8 @@ class SimpleTest
         unsigned int _error_count;
 
     public:
+        SimpleTest();
+
         std::vector<SimpleUnitTest> vec_unit_tests;
 
         void run_tests(void);
