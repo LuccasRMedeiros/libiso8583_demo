@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+
 class SimpleUnitTest
 {
     private:
@@ -30,5 +31,9 @@ class SimpleTest
 
         void run_tests(void);
 };
+
+extern int rec_signal;
+
+void sig_intercept(int signal);
 
 #endif

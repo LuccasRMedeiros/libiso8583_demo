@@ -1,5 +1,6 @@
-#include "test_case.hpp"
+#include "unit_test_class.hpp"
 
+#include <csignal>
 #include <iostream>
 
 #define TITLE_FORMAT    "\e[1;34m"
@@ -49,4 +50,45 @@ void SimpleTest::run_tests(void)
     }
 
     std::cout << RESET_FORMAT << "Finished, success count: " << _success_count << ", failures: " << _error_count << std::endl;
+}
+
+int rec_signal = 0;
+
+void sig_intercept(int signal)
+{
+    std::cout << ERROR_FORMAT << "Signal: ";
+
+    switch(signal)
+    {
+    case SIGABRT:
+        std::cout << "SIGABRT" << RESET_FORMAT << std::endl;
+        break;
+    case SIGFPE:
+        std::cout << "SIGFPE" << RESET_FORMAT << std::endl;
+        break;
+    case SIGILL:
+        std::cout << "SIGILL" << RESET_FORMAT << std::endl;
+        break;
+    case SIGINT:
+        std::cout << "SIGINT" << RESET_FORMAT << std::endl;
+        break;
+    case SIGSEGV:
+        std::cout << "SIGSEGV" << RESET_FORMAT << std::endl;
+        break;
+    case SIGTERM:
+        std::cout << "SIGTERM" << RESET_FORMAT << std::endl;
+        break;
+    }
+
+    rec_signal = signal;
+}
+
+void init_sig_intercept(void)
+{
+    std::signal(SIGABRT, sig_intercept);
+    std::signal(SIGFPE, sig_intercept);
+    std::signal(SIGILL, sig_intercept);
+    std::signal(SIGINT, sig_intercept);
+    std::signal(SIGSEGV, sig_intercept);
+    std::signal(SIGTERM, sig_intercept);
 }
