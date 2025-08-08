@@ -3,10 +3,6 @@
 #include <csignal>
 #include <iostream>
 
-#define TITLE_FORMAT    "\e[1;34m"
-#define SUCCESS_FORMAT  "\e[1;32m"
-#define ERROR_FORMAT    "\e[1;31m"
-#define RESET_FORMAT    "\e[0m"
 
 SimpleUnitTest::SimpleUnitTest(
         std::string test_title,

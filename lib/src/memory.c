@@ -1,6 +1,19 @@
 #include "memory.h"
 
+#include <stdlib.h>
 #include <string.h>
+
+#define FILESYS_LBLOCK  0 
+#define FILESYS_BLOCKS  0 
+#define FILESYS_TBLOCK  sizeof (uint16_t)
+#define FILESYS_BITMAP  sizeof (uint16_t) + sizeof (uint8_t)
+
+#define METADATA_FILENAME   0 
+#define METADATA_BLOCKIN    64
+#define METADATA_FILESIZE   64 + sizeof (uint8_t)
+#define METADATA_DATETIME   64 + sizeof (uint8_t) + sizeof (uint32_t)
+
+#define DATA_START  METADATA_DATETIME + sizeof (time_t)
 
 
 static byte memory_disk[MEMORY_SIZE];
@@ -28,25 +41,26 @@ void memory_init(void)
 
     // Writes the filesystem on memory
     memcpy(
-            disk_access.blocks[0].page_ptr[0],
-            &fsys_header.block_size,
-            sizeof (fsys_header.block_size));
-    memcpy(
-            disk_access.blocks[0].page_ptr[0] + sizeof(fsys_header.block_size),
-            &fsys_header.total_blocks,
-            sizeof (fsys_header.total_blocks));
-    memcpy(
-            disk_access.blocks[0].page_ptr[0] + sizeof(fsys_header.block_size) + sizeof (fsys_header.total_blocks),
-            &fsys_header.free_bitmap,
-            sizeof (fsys_header.free_bitmap));
+            disk_access.blocks[FILESYS_LBLOCK].page_ptr[0],
+            &fsys_header,
+            sizeof (flash_memory_filesystem_st));
 }
 
 int memory_erase_block(size_t block_id)
 {
+    uint8_t lb_bitmap = 0b0;
+    uint8_t free_bitmap = 0b0;
+
     if (block_id <= 0 || block_id >= BLOCK_CNT)
         return -1; // Out of bounds or trying to erase filesystem
 
     memset(disk_access.blocks[block_id].page_ptr[0], 0xff, BLOCK_SIZE);
+
+    // Update the bitmap
+    memcpy(&free_bitmap, disk_access.blocks[FILESYS_LBLOCK].page_ptr[0] + FILESYS_BITMAP, sizeof(uint8_t));
+    lb_bitmap = 1 << block_id;
+    free_bitmap &= lb_bitmap;
+    memcpy(disk_access.blocks[FILESYS_LBLOCK].page_ptr[0], &free_bitmap, sizeof (uint8_t));
 
     return 0;
 }
@@ -74,9 +88,12 @@ int flash_memory_write(char *filename, void *data, size_t data_len)
     
     while (total_size > 0)
     {
-        ++cnt_used_blocks;
-        lb_bitmap <<= 1; // Prepare the bitmap update
         total_size /= BLOCK_SIZE;
+        ++cnt_used_blocks;
+
+        // Prepare the bitmap update
+        lb_bitmap <<= 1;
+        lb_bitmap &= 1;
     }
 
     last_used_block = block_id + cnt_used_blocks;
@@ -89,8 +106,8 @@ int flash_memory_write(char *filename, void *data, size_t data_len)
     free_bitmap ^= lb_bitmap;
 
     // Create the file metadata
-    memset(&dir_entry, 0x00, sizeof(flash_memory_dir_st));
-    memcpy(dir_entry.filename, filename, FILENAME_SIZE);
+    memset(&dir_entry, 0xff, sizeof(flash_memory_dir_st));
+    memcpy(dir_entry.filename, filename, strlen(filename));
     dir_entry.block_in = block_id;
     dir_entry.file_size = data_len;
     dir_entry.datetime_created = time(NULL);
@@ -101,6 +118,23 @@ int flash_memory_write(char *filename, void *data, size_t data_len)
     memcpy(page_entry_ptr + sizeof (dir_entry), data, data_len);
 
     return 0; // Success
+}
+
+int flash_memory_get_str_filename(byte *dir_filename, char *out)
+{
+    size_t chr;
+
+    if (dir_filename == NULL || out == NULL)
+        return -1;
+
+    for (chr = 0; chr < FILENAME_SIZE && dir_filename[chr] != 0xff; ++chr)
+    {
+        out[chr] = dir_filename[chr];
+    }
+
+    out[chr] = '\0';
+
+    return 0;
 }
 
 int flash_memory_read(flash_memory_dir_st **out)
@@ -126,4 +160,73 @@ int flash_memory_read(flash_memory_dir_st **out)
     *out = dir_entries;
 
     return 0;
+}
+
+int flash_memory_read_file(const char *filename, byte **out)
+{
+    flash_memory_dir_st dir_entry;
+
+    if (filename == NULL || strlen(filename) > FILENAME_MAX)
+        return -1; // Invalid name
+
+    // From logical block 1, search for file name
+    for (size_t block_id = 1; block_id < BLOCK_CNT; ++block_id)
+    {
+        char dir_filename[FILENAME_SIZE+1] = { '\0' };
+
+        memcpy(&dir_entry, disk_access.blocks[block_id].page_ptr[0], sizeof (flash_memory_dir_st));
+
+        flash_memory_get_str_filename(dir_entry.filename, dir_filename);
+
+        if (strncmp(filename, dir_filename, strlen(filename)) == 0)
+        {
+            *out = calloc(dir_entry.file_size, sizeof (byte)); // Allocate memory as the file size is only acknowledged at read time
+            if (*out == NULL)
+                return -2; // Could not allocate enough memory 
+
+            memcpy(*out, disk_access.blocks[block_id].page_ptr[0] + DATA_START, dir_entry.file_size);
+
+            return 0; // Success
+        }
+    }
+
+    return -3; // Requested file is not present on disk
+}
+
+void flash_memory_show_info(void)
+{
+    uint8_t free_bitmap = 0b0;
+    size_t cnt_used_blocks;
+    flash_memory_dir_st *dir_entries;
+
+    flash_memory_read(&dir_entries);
+    memcpy(&free_bitmap, disk_access.blocks[FILESYS_LBLOCK].page_ptr + FILESYS_BITMAP, sizeof(uint8_t));
+
+    for (size_t i = 0; free_bitmap > 0; ++i)
+    {
+        cnt_used_blocks += free_bitmap & 0b0; // This results to "1" each time a bit is 0
+        free_bitmap >>= 1;
+    }
+
+    printf("Flash disk info:\n");
+    printf("Total size = %u (%u total blocks)\n", MEMORY_SIZE, BLOCK_CNT);
+    printf("Occupied = %lu\n", cnt_used_blocks * BLOCK_SIZE);
+    printf("\nroot:\n");
+
+    for (size_t dir_entry_n = 0; dir_entry_n < BLOCK_CNT - 1; ++dir_entry_n)
+    {
+        // Read the first piece of data of the metadata, if it is "0xff" means no data is present at block
+        if (dir_entries[dir_entry_n].filename[0] != 0xff)
+        {
+            char datetime_created_str[16] = { '\0' };
+            char filename_str[FILENAME_SIZE+1] = { '\0' };
+            time_t datetime_created = dir_entries[dir_entry_n].datetime_created;
+            struct tm *datetime_created_st;
+
+            datetime_created_st = localtime(&datetime_created);
+            strftime(datetime_created_str, 16, "%b\t%d %H:%M", datetime_created_st);
+            flash_memory_get_str_filename(dir_entries[dir_entry_n].filename, filename_str);
+            printf("└─── %u\t%s\t%s\n", dir_entries[dir_entry_n].file_size, datetime_created_str, filename_str);
+        }
+    }
 }

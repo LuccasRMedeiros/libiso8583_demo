@@ -24,7 +24,7 @@ typedef struct
 
 typedef struct
 {
-    char filename[FILENAME_SIZE];
+    byte filename[FILENAME_SIZE];
     uint8_t block_in;
     uint32_t file_size;
     time_t datetime_created;
@@ -43,6 +43,9 @@ typedef struct
 void memory_init(void);
 int memory_erase_block(size_t block_id);
 int flash_memory_write(char *filename, void *data, size_t data_len);
+int flash_memory_get_str_filename(byte *dir_filename, char *out);
 int flash_memory_read(flash_memory_dir_st **out);
+int flash_memory_read_file(const char *filename, byte **out);
+void flash_memory_show_info(void);
 
 #endif
