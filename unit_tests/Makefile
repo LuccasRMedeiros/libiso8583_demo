@@ -1,28 +1,38 @@
 CC=g++
 STD=c++11
-CFLAGS=-Wall -Wextra -g
+CFLAGS=-Wall -Wextra
 AR=ar
 
-PROJ=pos_demo_unit_test
+PROJ=libsimple_test.a
+TEST=pos_demo_unit_test
 
-SRC=$(wildcard unit_test_class/*.cpp) test_cases.cpp
-INC=-Iunit_test_class -Itest_subject
+SRC=$(wildcard unit_test_class/*.cpp)
+INC=unit_test_class
 OBJ=$(patsubst %.cpp, %.o, $(SRC))
-LIB=test_subject
-LINK=iso8583_demo
+
+TEST_SUBJECT=../lib
+TEST_LINK=iso8583_demo
+TEST_INC=$(TEST_SUBJECT)/src/
+TEST_SRC=test_cases.cpp
+
+all: $(TEST)
+	@./$(TEST)
+
+debug: CFLAGS += -g -O0
+
+debug: $(TEST)
 
 %.o: %.cpp
-	@$(CC) -std=$(STD) $(CFLAGS) $(INC) -c $< -o $@
+	$(CC) -std=$(STD) $(CFLAGS) -I$(INC) -c $< -o $@
 
-all: $(PROJ)
+$(TEST): lib
+	$(CC) -std=$(STD) $(CFLAGS) $(TEST_SRC) -I$(INC) -I$(TEST_INC) -L$(TEST_SUBJECT) -l$(TEST_LINK) ./$(PROJ) -o $@
 
-$(PROJ): $(OBJ)
-	@$(CC) -std=$(STD) $(CFLAGS) $(INC) $(OBJ) -L$(LIB) -l$(LINK) -o $@
-	@echo "Build complete!"
+lib: $(OBJ)
+	@$(AR) r $(PROJ) $(OBJ)
 
 clean:
-	@rm -f $(PROJ) $(OBJ)
-	@echo "Project cleaned"
+	@rm -f $(TEST) $(PROJ) $(OBJ)
 
 re: clean all
 

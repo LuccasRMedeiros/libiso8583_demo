@@ -1,0 +1,70 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-std=gnu99",
+      "-Wall",
+      "-Wextra",
+      "-Wall",
+      "-g",
+      "-c",
+      "-o",
+      "src/iso8583_demo.o",
+      "src/iso8583_demo.c"
+    ],
+    "directory": "/home/otaku_ocidental/workroot/libiso8583_demo/lib",
+    "file": "/home/otaku_ocidental/workroot/libiso8583_demo/lib/src/iso8583_demo.c",
+    "output": "/home/otaku_ocidental/workroot/libiso8583_demo/lib/src/iso8583_demo.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-std=gnu99",
+      "-Wall",
+      "-Wextra",
+      "-Wall",
+      "-g",
+      "-c",
+      "-o",
+      "src/luhn_validation.o",
+      "src/luhn_validation.c"
+    ],
+    "directory": "/home/otaku_ocidental/workroot/libiso8583_demo/lib",
+    "file": "/home/otaku_ocidental/workroot/libiso8583_demo/lib/src/luhn_validation.c",
+    "output": "/home/otaku_ocidental/workroot/libiso8583_demo/lib/src/luhn_validation.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-std=gnu99",
+      "-Wall",
+      "-Wextra",
+      "-Wall",
+      "-g",
+      "-c",
+      "-o",
+      "src/memory.o",
+      "src/memory.c"
+    ],
+    "directory": "/home/otaku_ocidental/workroot/libiso8583_demo/lib",
+    "file": "/home/otaku_ocidental/workroot/libiso8583_demo/lib/src/memory.c",
+    "output": "/home/otaku_ocidental/workroot/libiso8583_demo/lib/src/memory.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-std=gnu99",
+      "-Wall",
+      "-Wextra",
+      "-Wall",
+      "-g",
+      "-c",
+      "-o",
+      "src/stt_machine.o",
+      "src/stt_machine.c"
+    ],
+    "directory": "/home/otaku_ocidental/workroot/libiso8583_demo/lib",
+    "file": "/home/otaku_ocidental/workroot/libiso8583_demo/lib/src/stt_machine.c",
+    "output": "/home/otaku_ocidental/workroot/libiso8583_demo/lib/src/stt_machine.o"
+  }
+]

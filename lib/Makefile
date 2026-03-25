@@ -10,16 +10,19 @@ OBJ=$(patsubst %.c, %.o, $(SRC))
 
 
 %.o: %.c
-	@$(CC) -std=$(STD) $(CFLAGS) -g -c $< -o $@
+	$(CC) -std=$(STD) $(CFLAGS) -c $< -o $@
 
 all: $(OBJ)
 	@$(AR) r $(PROJ) $(OBJ)
-	@echo "Finished!"
+
+debug: CFLAGS += -g
+
+debug: $(OBJ)
+	@$(AR) r $(PROJ) $(OBJ)
 
 clean:
 	@rm -f $(PROJ) $(OBJ)
-	@echo "Project cleaned"
 
 re: clean all
 	
-.PHONY: all clean re
+.PHONY: all debug clean re

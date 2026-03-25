@@ -13,13 +13,16 @@ LINK=iso8583_demo
 
 
 all:
-	@$(CC) -std=$(STD) $(CFLAGS) -g -I$(INC) $(SRC) -L $(LIB) -l$(LINK) -o $(PROJ)
-	@echo "Finished!"
+	$(CC) -std=$(STD) $(CFLAGS) -I$(INC) $(SRC) -L $(LIB) -l$(LINK) -o $(PROJ)
+
+debug: CFLAGS += -g
+
+debug:
+	@$(CC) -std=$(STD) $(CFLAGS) -I$(INC) $(SRC) -L $(LIB) -l$(LINK) -o $(PROJ)
 
 clean:
 	@rm -f $(PROJ)
-	@echo "Project cleaned"
 
 re: clean all
 
-.PHONY: all debug clean
+.PHONY: all debug clean re

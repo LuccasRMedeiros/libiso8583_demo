@@ -17,12 +17,12 @@
 
 
 static byte memory_disk[MEMORY_SIZE];
-static flash_memory_map_st disk_access;
+static memory_map_st disk_access;
 
 void memory_init(void)
 {
     byte *memory_disk_ptr = memory_disk;
-    flash_memory_filesystem_st fsys_header;
+    memory_filesystem_st fsys_header;
 
     memset(memory_disk, 0xff, sizeof (memory_disk));
     disk_access.entry_ptr = memory_disk;
@@ -43,7 +43,7 @@ void memory_init(void)
     memcpy(
             disk_access.blocks[FILESYS_LBLOCK].page_ptr[0],
             &fsys_header,
-            sizeof (flash_memory_filesystem_st));
+            sizeof (memory_filesystem_st));
 }
 
 int memory_erase_block(size_t block_id)
@@ -65,7 +65,7 @@ int memory_erase_block(size_t block_id)
     return 0;
 }
 
-int flash_memory_write(char *filename, void *data, size_t data_len)
+int memory_write(char *filename, void *data, size_t data_len)
 {
     byte *page_entry_ptr = NULL;
     uint8_t free_bitmap = 0b0;
@@ -74,17 +74,24 @@ int flash_memory_write(char *filename, void *data, size_t data_len)
     size_t cnt_used_blocks = 0;
     size_t total_size = 0;
     size_t last_used_block = 0;
-    flash_memory_dir_st dir_entry;
+    memory_dir_st dir_entry;
+
+	if (filename == NULL || data == NULL || data_len == 0)
+		return -1;
 
     memcpy(&free_bitmap, disk_access.blocks[0].page_ptr[0] + 4, sizeof (uint8_t));
 
     if (free_bitmap == 0)
-        return -1; // No logical blocks available
+        return -2; // No logical blocks available
 
-    for (block_id = 0; (free_bitmap & 1) == 0; ++block_id);
+    for (block_id = 0; (free_bitmap & 1) == 0 && free_bitmap != 0; ++block_id)
+		free_bitmap >>= 1;
     
+	if (block_id > BLOCK_CNT)
+		return -2; // No logical blocks available, just reinforcing 
+
     // Determine how many blocks will be used
-    total_size = sizeof (flash_memory_dir_st) + data_len;
+    total_size = sizeof (memory_dir_st) + data_len;
     
     while (total_size > 0)
     {
@@ -106,7 +113,7 @@ int flash_memory_write(char *filename, void *data, size_t data_len)
     free_bitmap ^= lb_bitmap;
 
     // Create the file metadata
-    memset(&dir_entry, 0xff, sizeof(flash_memory_dir_st));
+    memset(&dir_entry, 0xff, sizeof(memory_dir_st));
     memcpy(dir_entry.filename, filename, strlen(filename));
     dir_entry.block_in = block_id;
     dir_entry.file_size = data_len;
@@ -120,7 +127,7 @@ int flash_memory_write(char *filename, void *data, size_t data_len)
     return 0; // Success
 }
 
-int flash_memory_get_str_filename(byte *dir_filename, char *out)
+int memory_get_str_filename(byte *dir_filename, char *out)
 {
     size_t chr;
 
@@ -137,9 +144,9 @@ int flash_memory_get_str_filename(byte *dir_filename, char *out)
     return 0;
 }
 
-int flash_memory_read(flash_memory_dir_st **out)
+int memory_read(memory_dir_st **out)
 {
-    static flash_memory_dir_st dir_entries[BLOCK_CNT - 1];
+    static memory_dir_st dir_entries[BLOCK_CNT - 1];
 
     if (*disk_access.entry_ptr == 0xff)
         return -1; // Flash card still erased
@@ -162,9 +169,9 @@ int flash_memory_read(flash_memory_dir_st **out)
     return 0;
 }
 
-int flash_memory_read_file(const char *filename, byte **out)
+int memory_read_file(const char *filename, byte **out)
 {
-    flash_memory_dir_st dir_entry;
+    memory_dir_st dir_entry;
 
     if (filename == NULL || strlen(filename) > FILENAME_MAX)
         return -1; // Invalid name
@@ -174,9 +181,9 @@ int flash_memory_read_file(const char *filename, byte **out)
     {
         char dir_filename[FILENAME_SIZE+1] = { '\0' };
 
-        memcpy(&dir_entry, disk_access.blocks[block_id].page_ptr[0], sizeof (flash_memory_dir_st));
+        memcpy(&dir_entry, disk_access.blocks[block_id].page_ptr[0], sizeof (memory_dir_st));
 
-        flash_memory_get_str_filename(dir_entry.filename, dir_filename);
+        memory_get_str_filename(dir_entry.filename, dir_filename);
 
         if (strncmp(filename, dir_filename, strlen(filename)) == 0)
         {
@@ -193,13 +200,13 @@ int flash_memory_read_file(const char *filename, byte **out)
     return -3; // Requested file is not present on disk
 }
 
-void flash_memory_show_info(void)
+void memory_show_info(void)
 {
     uint8_t free_bitmap = 0b0;
     size_t cnt_used_blocks;
-    flash_memory_dir_st *dir_entries;
+    memory_dir_st *dir_entries;
 
-    flash_memory_read(&dir_entries);
+    memory_read(&dir_entries);
     memcpy(&free_bitmap, disk_access.blocks[FILESYS_LBLOCK].page_ptr + FILESYS_BITMAP, sizeof(uint8_t));
 
     for (size_t i = 0; free_bitmap > 0; ++i)
@@ -225,7 +232,7 @@ void flash_memory_show_info(void)
 
             datetime_created_st = localtime(&datetime_created);
             strftime(datetime_created_str, 16, "%b\t%d %H:%M", datetime_created_st);
-            flash_memory_get_str_filename(dir_entries[dir_entry_n].filename, filename_str);
+            memory_get_str_filename(dir_entries[dir_entry_n].filename, filename_str);
             printf("└─── %u\t%s\t%s\n", dir_entries[dir_entry_n].file_size, datetime_created_str, filename_str);
         }
     }
