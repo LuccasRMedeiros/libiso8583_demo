@@ -1,4 +1,5 @@
 #include "unit_test_class.hpp"
+#include "unit_test_aux.hpp"
 #include <cstring>
 
 extern "C"
@@ -20,7 +21,7 @@ void initialize_tests(SimpleTest &test_libiso8583_demo)
             "Test if memory_init initializes memory without failure",
             []() -> bool {
                 memory_init();
-				return assert_nosig();
+				return true; // If it crashes the program will terminate anyway
             });
 
 	test_libiso8583_demo.add_test(
@@ -36,7 +37,7 @@ void initialize_tests(SimpleTest &test_libiso8583_demo)
 			[]() -> bool {
 				std::cout << RESET_FORMAT << std::endl;
 				memory_show_info();
-				return assert_nosig();
+				return true;
 			});
 
     test_libiso8583_demo.add_test(
@@ -79,18 +80,15 @@ void initialize_tests(SimpleTest &test_libiso8583_demo)
     test_libiso8583_demo.add_test(
 			"Test if memory_get_str_filename create a valid null terminated string from a array of bytes",
 			[]() -> bool {
+				bool ret = true;
                 char dir_filename[FILENAME_SIZE+1] = { '\0' };
                 byte test_str[FILENAME_SIZE] = { 0xff };
                 
                 memcpy(test_str, "foobar", 6);
 
-                if (!assert_eq<int>(memory_get_str_filename(test_str, dir_filename), 0))
-                    return false;
-
-                if (!assert_eq<string>(dir_filename, "foobar"))
-                    return false;
-
-                return true;
+                ret = assert_eq<int>(memory_get_str_filename(test_str, dir_filename), 0) && ret ? true : false;
+                ret = assert_eq<string>(dir_filename, "foobar") && ret ? true : false;
+                return ret;
             });
 
 	test_libiso8583_demo.add_test(
@@ -102,28 +100,19 @@ void initialize_tests(SimpleTest &test_libiso8583_demo)
     test_libiso8583_demo.add_test(
             "Test if memory_read_file reads the content of \"test.txt\"",
             []() -> bool {
+				bool ret = true;
                 byte *dy_file_content = NULL;
 				string dy_file_string;
                 
-                if (!assert_eq<int>(memory_read_file("test.txt", &dy_file_content), 0))
-                {
-                    if (dy_file_content != NULL)
-                        free(dy_file_content);
-
+                ret = assert_eq<int>(memory_read_file("test.txt", &dy_file_content), 0) && ret ? true : false;
+                
+				if (dy_file_content == NULL)
                     return false;
-                }
 	
 				dy_file_string = string(reinterpret_cast<const char*>(dy_file_content), 12);
-                if (!assert_eq<string>(dy_file_string, "Hello World!"))
-                {
-                    if (dy_file_content != NULL)
-                        free(dy_file_content);
-
-                    return false;
-                }
-
+                ret = assert_eq<string>(dy_file_string, "Hello World!") && ret ? true : false;
                 free(dy_file_content);
-                return true;
+                return ret;
             });
 
 	test_libiso8583_demo.add_test(
@@ -131,27 +120,19 @@ void initialize_tests(SimpleTest &test_libiso8583_demo)
 			[]() -> bool {
 				std::cout << RESET_FORMAT << std::endl;
 				memory_show_info();
-				return assert_nosig();
+				return true; // If it crashes the program will finish anyway
 			});
 
     test_libiso8583_demo.add_test(
             "Test if memory_erase_block erases block",
             []() -> bool {
+				bool ret = true;
                 memory_dir_st *files;
 
-                if (!assert_eq<int>(memory_erase_block(1), 0))
-                    return false;
-
+                ret = assert_eq<int>(memory_erase_block(1), 0) && ret ? true : false;
                 memory_read(&files);
-                if (!assert_nosig())
-                {
-                    rec_signal = 0;
-                    return false;
-                }
-
-                if (!assert_eq<int>(files[0].filename[0], 0xff))
-                    return false;
-                return true;
+                ret = assert_eq<int>(files[0].filename[0], 0xff) && ret ? true : false;
+                return ret;
             });
 
 	test_libiso8583_demo.add_test(
@@ -159,14 +140,16 @@ void initialize_tests(SimpleTest &test_libiso8583_demo)
 			[]() -> bool {
 				std::cout << RESET_FORMAT << std::endl;
 				memory_show_info();
-				return assert_nosig();
+				return true;
 			});
 
 	test_libiso8583_demo.add_test(
 			"Test if iso8583_buildmsg builds a message accordingly to specifications",
 			[]() -> bool {
 				iso8583msg_st msg;
-				char msgbuffer[512];
+				unsigned char msgbuffer[512];
+				unsigned char expected[512] = { 0x30 ,0x32 ,0x30 ,0x30 ,0xF2 ,0x30 ,0x00 ,0x00 ,0x08 ,0x80 ,0x80 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x01 ,0x31 ,0x36 ,0x34 ,0x31 ,0x31 ,0x31 ,0x31 ,0x31 ,0x31 ,0x31 ,0x31 ,0x31 ,0x31 ,0x31 ,0x31 ,0x31 ,0x31 ,0x31 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x31 ,0x30 ,0x30 ,0x31 ,0x32 ,0x33 ,0x30 ,0x31 ,0x30 ,0x32 ,0x30 ,0x33 ,0x30 ,0x31 ,0x32 ,0x33 ,0x34 ,0x35 ,0x36 ,0x31 ,0x30 ,0x32 ,0x30 ,0x33 ,0x30 ,0x41 ,0x42 ,0x43 ,0x31 ,0x32 ,0x33 ,0x34 ,0x35 ,0x36 ,0x37 ,0x38 ,0x39 ,0x54 ,0x45 ,0x52 ,0x4D ,0x30 ,0x30 ,0x30 ,0x31 ,0x38 ,0x34 ,0x30 ,0x54 ,0x45 ,0x53 ,0x54 ,0x44 ,0x41 ,0x54 ,0x41 };
+				size_t msg_len = 0;
 				string msgstr;
 				
 				strcpy(msg.msgtype, "0200");
@@ -179,17 +162,19 @@ void initialize_tests(SimpleTest &test_libiso8583_demo)
 				strcpy(msg.de037_refnumber, "ABC123456789");
 				strcpy(msg.de041_cardid, "TERM01");
 				strcpy(msg.de049_currency, "840");
-				strcpy(msg.de128_authcode, "008TESTDATA");
-				iso8583_buildmsg(msg, sizeof (msgbuffer), msgbuffer);
-				msgstr = string(msgbuffer);
-				return assert_eq<string>(msgstr, "30323030F23000000880800000000000000131363431313131313131313131313131313130303030303030303030303030303030313030313233303130323033303132333435363130323033304142433132333435363738395445524D3020203834303030385445535444415441");
+				strcpy(msg.de128_authcode, "5445535444415441");
+				iso8583_buildmsg(msg, sizeof (msgbuffer), msgbuffer, &msg_len);
+//				msgstr = byte_to_hex(msgbuffer, msg_len);
+//				return assert_eq<string>(msgstr, "30323030F23000000880800000000000000131363431313131313131313131313131313130303030303030303030303030303030313030313233303130323033303132333435363130323033304142433132333435363738395445524D3020203834303030385445535444415441");
+				return assert_eq<int>(memcmp(msgbuffer, expected, msg_len), 0);			
 			});
 
 	test_libiso8583_demo.add_test(
 			"Test if iso8583_buildmsg returns \"MSG_BUFFER_TOO_SHORT\"(1) when size of buffer is to short to fit a message",
 			[]() -> bool {
 				iso8583msg_st msg;
-				char msgbuffer[12];
+				unsigned char msgbuffer[12];
+				size_t msg_len = 0;
 				
 				strcpy(msg.msgtype, "0200");
 				strcpy(msg.de002_pan, "4111111111111111");
@@ -202,14 +187,15 @@ void initialize_tests(SimpleTest &test_libiso8583_demo)
 				strcpy(msg.de041_cardid, "TERM01");
 				strcpy(msg.de049_currency, "840");
 				strcpy(msg.de128_authcode, "008TESTDATA");
-				return assert_eq<iso8583msg_ret_e>(iso8583_buildmsg(msg, sizeof (msgbuffer), msgbuffer), MSG_BUFFER_TOO_SHORT);
+				return assert_eq<iso8583msg_ret_e>(iso8583_buildmsg(msg, sizeof (msgbuffer), msgbuffer, &msg_len), MSG_BUFFER_TOO_SHORT);
 			});
 
 	test_libiso8583_demo.add_test(
 			"Test if iso8583_buildmsg returns \"MSG_TYPE_NOT_PRESENT\"(2) when message type is not passed with the message structure",
 			[]() -> bool {
 				iso8583msg_st msg;
-				char msgbuffer[512];
+				unsigned char msgbuffer[512];
+				size_t msg_len = 0;
 				
 				memset(msg.msgtype, 0, MSGTYPE_LEN);
 				strcpy(msg.de002_pan, "4111111111111111");
@@ -222,17 +208,18 @@ void initialize_tests(SimpleTest &test_libiso8583_demo)
 				strcpy(msg.de041_cardid, "TERM01");
 				strcpy(msg.de049_currency, "840");
 				strcpy(msg.de128_authcode, "008TESTDATA");
-				return assert_eq<iso8583msg_ret_e>(iso8583_buildmsg(msg, sizeof (msgbuffer), msgbuffer), MSG_TYPE_NOT_PRESENT);
+				return assert_eq<iso8583msg_ret_e>(iso8583_buildmsg(msg, sizeof (msgbuffer), msgbuffer, &msg_len), MSG_TYPE_NOT_PRESENT);
 			});
 
 	test_libiso8583_demo.add_test(
 			"Test if iso8583_buildmsg returns \"MSG_CANNOT_BE_NULL\"(3) when message without contents are passed",
 			[]() -> bool {
 				iso8583msg_st msg;
-				char msgbuffer[512];
+				unsigned char msgbuffer[512];
+				size_t msg_len = 0;
 				
 				memset(&msg, 0, sizeof (msg));
-				return assert_eq<iso8583msg_ret_e>(iso8583_buildmsg(msg, sizeof (msgbuffer), msgbuffer), MSG_CANNOT_BE_NULL);
+				return assert_eq<iso8583msg_ret_e>(iso8583_buildmsg(msg, sizeof (msgbuffer), msgbuffer, &msg_len), MSG_CANNOT_BE_NULL);
 			});
 
 	test_libiso8583_demo.add_test(

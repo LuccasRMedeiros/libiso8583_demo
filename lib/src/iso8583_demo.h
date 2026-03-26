@@ -4,8 +4,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define MSGTYPE_LEN 4
-#define BITMASK_LEN 16
+#define MSGTYPE_LEN 		4
+#define BITMASK_SHORT_LEN 	8
+#define BITMASK_LONG_LEN 	16
 
 #define DE002_LEN   19
 #define DE003_LEN   6
@@ -24,6 +25,7 @@ typedef enum
     MSG_BUFFER_TOO_SHORT,
     MSG_TYPE_NOT_PRESENT,
     MSG_CANNOT_BE_NULL,
+	MSG_OUT_LEN_CANNOT_BE_NULL,
     MSG_STRUCT_OUT_CANNOT_BE_NULL,
 } iso8583msg_ret_e;
 
@@ -42,7 +44,11 @@ typedef struct
     char    de128_authcode[DE128_LEN+1];
 } iso8583msg_st;
 
-iso8583msg_ret_e iso8583_buildmsg(iso8583msg_st msgfields, size_t buf_len, char *buf_out);
+iso8583msg_ret_e iso8583_buildmsg(
+		iso8583msg_st msgfields,
+		size_t buf_len,
+		unsigned char *buf_out,
+		size_t *out_len);
 iso8583msg_ret_e iso8583_parsemsg(const char *msg, iso8583msg_st *out);
 
 #endif

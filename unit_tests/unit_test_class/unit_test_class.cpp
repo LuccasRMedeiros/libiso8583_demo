@@ -1,32 +1,5 @@
 #include "unit_test_class.hpp"
 
-int rec_signal = 0;
-
-static void sig_intercept(int signal)
-{
-    std::cout << MESSAGE_FORMAT << "\nProgram crashed: ";
-
-    switch(signal)
-    {
-    case SIGABRT:
-        std::cout << ERROR_FORMAT << "SIGABRT" << RESET_FORMAT << std::endl;
-        break;
-    case SIGFPE:
-        std::cout << ERROR_FORMAT << "SIGFPE" << RESET_FORMAT << std::endl;
-        break;
-    case SIGILL:
-        std::cout << ERROR_FORMAT << "SIGILL" << RESET_FORMAT << std::endl;
-        break;
-    case SIGSEGV:
-        std::cout << ERROR_FORMAT << "SIGSEGV" << RESET_FORMAT << std::endl;
-        break;
-	default:
-		std::cout << ERROR_FORMAT << "(" << signal << ") Finishing test execution" << RESET_FORMAT << std::endl;
-    }
-	
-	exit(signal);
-}
-
 namespace SimpleTestClasses
 {
 	SimpleUnitTest::SimpleUnitTest(
@@ -84,20 +57,5 @@ namespace SimpleTestClasses
 	
 	    std::cout << RESET_FORMAT << "Finished, success count: " << _success_count << ", failures: " << _error_count << std::endl;
 		return _error_count;
-	}
-}
-
-namespace SimpleTestTemplates
-{
-
-	bool assert_nosig(void)
-	{
-		if (rec_signal != 0)
-		{
-			rec_signal = 0;
-			return false;
-		}
-
-		return true;
 	}
 }

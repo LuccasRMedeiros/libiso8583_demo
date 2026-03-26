@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// These are for internal use
 // From 1 to 8      ##12345678 *0
+#define BITMAP_1 0b10000000 // Tells if the secondary bitmap is on
 #define DE002_ON 0b01000000
 #define DE003_ON 0b00100000
 #define DE004_ON 0b00010000
@@ -31,116 +33,107 @@
 // From 121 to 128  ##12345678 *15 
 #define DE128_ON 0b00000001
 
-/**
- * This function presumes that "out" does have at least two bytes of space and 
- * is correctly aligned for the user intention of use. It need to be used with
- * caution as it may lead to UB
- */
-static void ascii_to_asciihex(char chr, char *out)
-{
-	int asciiint = chr;
-
-	if (out == NULL)
-		return;
-
-	strcpy(out, "00");
-
-	for (int ri = 1; ri >= 0; --ri)
-	{
-		char sbyte = asciiint % 16;
-
-		if (sbyte > 10)
-			sbyte += 55;
-		else
-			sbyte += 48;
-
-		asciiint /= 16;
-		out[ri] = sbyte;
-	}
-}
-
-static void cpy_as_hex(const char *src, char *dest, size_t dest_len)
-{
-	if (src == NULL || strlen(src) == 0 || dest == NULL)
-		return;
-
-	for (size_t src_i = 0; src_i < strlen(src) && src_i * 2 < dest_len; ++src_i)
-		ascii_to_asciihex(src[src_i], dest + (src_i * 2));
-}
-
 iso8583msg_ret_e iso8583_buildmsg(
         iso8583msg_st msgfields,
         size_t buf_len,
-        char *buf_out
+        unsigned char *buf_out,
+		size_t *out_len
         )
 {
-	char *msgtype_ptr;
-	char *bitmask_ptr;
-	char *msg_ptr;
+	unsigned char *msgtype_ptr;
+	unsigned char *bitmask_ptr;
+	unsigned char *msg_short_ptr;
+	unsigned char *msg_long_ptr;
+	size_t msg_len = 0;
 
 	if (buf_len < 512)
 		return MSG_BUFFER_TOO_SHORT;
 
-	memset(buf_out, 0, buf_len);
-	msgtype_ptr = buf_out;
-    bitmask_ptr = buf_out + MSGTYPE_LEN * 2;
-    msg_ptr = buf_out + MSGTYPE_LEN * 2 + BITMASK_LEN;
+	if (buf_out == NULL)
+		return MSG_CANNOT_BE_NULL;
+
+	if (out_len == NULL)
+		return MSG_OUT_LEN_CANNOT_BE_NULL;
 
 	if (strlen((char*)msgfields.msgtype) == 0)
 		return MSG_TYPE_NOT_PRESENT;
 
-	cpy_as_hex(msgfields.msgtype, msgtype_ptr, buf_len);
+	memset(buf_out, 0, buf_len);
+	msgtype_ptr = buf_out;
+    bitmask_ptr = buf_out + MSGTYPE_LEN;
+    msg_short_ptr = buf_out + MSGTYPE_LEN + BITMASK_SHORT_LEN;
+	msg_long_ptr = buf_out + MSGTYPE_LEN + BITMASK_LONG_LEN;
+
+	memcpy(msgtype_ptr, msgfields.msgtype, MSGTYPE_LEN);
 
     if (strlen(msgfields.de002_pan) > 0)
     {
-        strcpy(msg_ptr, msgfields.de002_pan); msg_ptr += DE002_LEN * 2;
+        memcpy(msg_short_ptr + msg_len, msgfields.de002_pan, DE002_LEN);
         bitmask_ptr[0] |= DE002_ON;
+		msg_len += DE002_LEN;
     }
     if (strlen(msgfields.de003_proccode) > 0)
     {
-        strcpy(msg_ptr, msgfields.de003_proccode); msg_ptr += DE003_LEN * 2;
+        memcpy(msg_short_ptr + msg_len, msgfields.de003_proccode, DE003_LEN);
         bitmask_ptr[0] |= DE003_ON;
+		msg_len += DE003_LEN;
     }
     if (strlen(msgfields.de004_amount) > 0)
     {
-        strcpy(msg_ptr, msgfields.de004_amount); msg_ptr += DE004_LEN * 2;
+        memcpy(msg_short_ptr + msg_len, msgfields.de004_amount, DE004_LEN);
         bitmask_ptr[0] |= DE004_ON;
+		msg_len += DE004_LEN;
     }
     if (strlen(msgfields.de007_datetime) > 0)
     {
-        strcpy(msg_ptr, msgfields.de007_datetime); msg_ptr += DE007_LEN * 2;
+        memcpy(msg_short_ptr + msg_len, msgfields.de007_datetime, DE007_LEN);
         bitmask_ptr[0] |= DE007_ON;
+		msg_len += DE007_LEN;
     }
     if (strlen(msgfields.de011_stan) > 0)
     {
-        strcpy(msg_ptr, msgfields.de011_stan); msg_ptr += DE011_LEN * 2;
+        memcpy(msg_short_ptr + msg_len, msgfields.de011_stan, DE011_LEN);
         bitmask_ptr[1] |= DE011_ON;
+		msg_len += DE011_LEN;
     }
     if (strlen(msgfields.de012_loctime) > 0)
     {
-        strcpy(msg_ptr, msgfields.de012_loctime); msg_ptr += DE012_LEN * 2;
+        memcpy(msg_short_ptr + msg_len, msgfields.de012_loctime, DE012_LEN);
         bitmask_ptr[1] |= DE012_ON;
+		msg_len += DE012_LEN;
     }
     if (strlen(msgfields.de037_refnumber) > 0)
     {
-        strcpy(msg_ptr, msgfields.de037_refnumber); msg_ptr += DE037_LEN * 2;
+        memcpy(msg_short_ptr + msg_len, msgfields.de037_refnumber, DE037_LEN);
         bitmask_ptr[4] |= DE037_ON;
+		msg_len += DE037_LEN;
     }
     if (strlen(msgfields.de041_cardid) > 0)
     {
-        strcpy(msg_ptr, msgfields.de041_cardid); msg_ptr += DE041_LEN * 2;
+        memcpy(msg_short_ptr + msg_len, msgfields.de041_cardid, DE041_LEN);
         bitmask_ptr[5] |= DE041_ON;
+		msg_len += DE041_LEN;
     }
     if (strlen(msgfields.de049_currency) > 0)
     {
-        strcpy(msg_ptr, msgfields.de049_currency); msg_ptr += DE049_LEN * 2;
+        memcpy(msg_short_ptr + msg_len, msgfields.de049_currency, DE049_LEN);
         bitmask_ptr[6] |= DE049_ON;
+		msg_len += DE049_LEN;
     }
     if (strlen(msgfields.de128_authcode) > 0)
     {
-        strcpy(msg_ptr, msgfields.de128_authcode); msg_ptr += DE128_LEN * 2;
+		memmove(msg_long_ptr, msg_short_ptr, msg_len);
+		memset(bitmask_ptr + BITMASK_SHORT_LEN, 0, BITMASK_SHORT_LEN);
+        memcpy(msg_long_ptr + msg_len, msgfields.de128_authcode, DE128_LEN);
+		bitmask_ptr[0] |= BITMAP_1;
         bitmask_ptr[15] |= DE128_ON;
+		msg_len += DE128_LEN + BITMASK_LONG_LEN;
     }
+	else
+		msg_len += BITMASK_SHORT_LEN;
+
+	msg_len += MSGTYPE_LEN;
+	*out_len = msg_len;
 
     return MSG_OK;
 }
@@ -156,7 +149,7 @@ iso8583msg_ret_e iso8583_parsemsg(const char *msg, iso8583msg_st *out)
     char *parse = (char*)msg;
     char *bitmask = parse + MSGTYPE_LEN;
 
-    memcpy(out->msgtype, parse, MSGTYPE_LEN); parse += MSGTYPE_LEN + BITMASK_LEN;
+    memcpy(out->msgtype, parse, MSGTYPE_LEN); parse += MSGTYPE_LEN + BITMASK_SHORT_LEN;
 
     if (bitmask[0] & DE002_ON)
     {
