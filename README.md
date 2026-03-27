@@ -1,5 +1,4 @@
 # libiso8583_demo
-## A mini demonstration on how POS machines behave
 
 This project demonstrates how a POS machine could behave when executing a
 transaction.
