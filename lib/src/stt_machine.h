@@ -9,8 +9,8 @@ typedef enum
     STT_READ_CARD,
     STT_ISO_SEND,
     STT_WAIT_RESP,
-    STT_RECEIPT,    // Estados extras para demonstração
-    STT_QUIT,       // 
+    STT_RECEIPT,
+    STT_QUIT,
 } stt_machine_e;
 
 typedef void (*stt_machine_callback_fn)(void);

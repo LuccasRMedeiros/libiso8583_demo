@@ -42,7 +42,7 @@ static void completefields(iso8583msg_st *out)
 static int readcard(char *mod, iso8583msg_st *out)
 {
     struct timespec slptime; 
-    const char *pan = "1234567890123456";//"5186001700008785";
+    const char *pan = "5186001700008785";
 
     slptime.tv_sec = 1;
     slptime.tv_nsec = 0;
@@ -105,7 +105,7 @@ int stt_machine(stt_machine_e *state_io)
     char mod[2+1] = { '\0' };
     char modstr[9+1] = { '\0' };
     char clock[5+1] = { '\0' };
-    char msg[512+1] = { '\0' };
+    unsigned char msg[512+1] = { '\0' };
     int amount = 0;
     iso8583msg_st transinfo;
     time_t loctime;
@@ -146,7 +146,7 @@ int stt_machine(stt_machine_e *state_io)
             strcpy(modstr, "Débito");
             printf("\nDébito selecionado\n");
         }
-        else // buf[0] == '2'
+        else
         {
             strcpy(mod, "20");
             strcpy(modstr, "Crédito");
@@ -157,7 +157,7 @@ int stt_machine(stt_machine_e *state_io)
         break;
 
     case STT_READ_CARD:
-        printf("\nR$%.2f %s\n\n", (float)(amount / 100), mod);
+        printf("\nR$%.2f %s\n\n", (float)(amount / 10), mod);
         printf("Aproxime ou insira o cartão\n");
         if (readcard(mod, &transinfo) < 0)
         {
@@ -171,13 +171,20 @@ int stt_machine(stt_machine_e *state_io)
         break;
 
     case STT_ISO_SEND:
-        printf("Processando...\n");
-        completefields(&transinfo);
-        iso8583_buildmsg(transinfo, sizeof (msg), msg);
-        printf("MESSAGE = %s\n", msg);
-        // TODO: Finalizar a montagem da mensagem e enviar para o serviço de autorizador
-        *state_io = STT_WAIT_RESP;
-
+		{
+			size_t msg_len;
+	
+        	printf("Processando...\n");
+        	completefields(&transinfo);
+        	iso8583_buildmsg(transinfo, sizeof (msg), msg, &msg_len);
+			printf("MESSAGE = ");
+			for (size_t chr = 0; chr < msg_len; ++chr)
+			{
+        		printf("%02x", msg[chr]);
+			}
+			printf("\n");
+        	*state_io = STT_WAIT_RESP;
+		}
         break;
 
     case STT_WAIT_RESP:

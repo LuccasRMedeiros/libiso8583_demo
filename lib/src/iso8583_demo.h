@@ -44,11 +44,7 @@ typedef struct
     char    de128_authcode[DE128_LEN+1];
 } iso8583msg_st;
 
-iso8583msg_ret_e iso8583_buildmsg(
-		iso8583msg_st msgfields,
-		size_t buf_len,
-		unsigned char *buf_out,
-		size_t *out_len);
-iso8583msg_ret_e iso8583_parsemsg(const char *msg, iso8583msg_st *out);
+iso8583msg_ret_e iso8583_buildmsg(iso8583msg_st msgfields, size_t buf_len, unsigned char *buf_out, size_t *out_len);
+iso8583msg_ret_e iso8583_parsemsg(unsigned char *msg, iso8583msg_st *out);
 
 #endif

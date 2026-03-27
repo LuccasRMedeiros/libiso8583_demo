@@ -3,6 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MEMORY_SIZE 4096
+#define BLOCK_SIZE  512
+#define PAGE_SIZE   256
+#define BLOCK_CNT   MEMORY_SIZE/BLOCK_SIZE
+#define PAGE_CNT    BLOCK_SIZE/PAGE_SIZE
+
 #define FILESYS_LBLOCK  0 
 #define FILESYS_BLOCKS  0 
 #define FILESYS_TBLOCK  sizeof (uint16_t)
@@ -15,6 +21,22 @@
 
 #define DATA_START  METADATA_DATETIME + sizeof (time_t)
 
+typedef struct
+{
+    uint16_t block_size;
+    uint8_t total_blocks;
+    uint8_t free_bitmap;
+} __attribute__((packed)) memory_filesystem_st;
+
+typedef struct 
+{
+    byte *entry_ptr;
+
+    struct
+    {
+        byte *page_ptr[PAGE_CNT];
+    } blocks[BLOCK_CNT];
+} memory_map_st;
 
 static byte memory_disk[MEMORY_SIZE];
 static memory_map_st disk_access;
